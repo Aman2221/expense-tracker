@@ -1,112 +1,165 @@
-import Image from "next/image";
+"use client";
+import React, { useState } from "react";
+
+enum trans_type {
+  income,
+  expense,
+}
+
+interface trans_interface {
+  name: string;
+  amount: string;
+  type: trans_type | string;
+}
+
+const initial_val = {
+  name: "",
+  amount: "",
+  type: "",
+};
 
 export default function Home() {
+  const [allTrans, setAllTrans] = useState<trans_interface[]>([]);
+  const [transData, setTransData] = useState(initial_val);
+  const [currStatus, setCurrStatus] = useState({
+    income: 0,
+    expense: 0,
+    balance: 0,
+  });
+
+  const handleChange = (e: React.FormEvent<HTMLInputElement>) => {
+    let target: any = e.target;
+    let keyName = target.name;
+    let value = target.value;
+
+    setTransData({
+      ...transData,
+      [keyName]: value,
+      type: value > 0 ? "income" : "expense",
+    });
+  };
+
+  const handleAddTransaction = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (transData.name && transData.amount) {
+      const all_transactions = [...allTrans, transData];
+      let curr_income = currStatus.income,
+        curr_expense = currStatus.expense;
+      if (transData.type == "income") {
+        curr_income = all_transactions
+          .filter((item) => item.type == "income")
+          .reduce(
+            (accumulator, currentValue: trans_interface) =>
+              accumulator + parseInt(currentValue.amount),
+            0
+          );
+      } else {
+        curr_expense = all_transactions
+          .filter((item) => item.type == "expense")
+          .reduce(
+            (accumulator, currentValue: trans_interface) =>
+              accumulator + parseInt(currentValue.amount),
+            0
+          );
+      }
+
+      setCurrStatus({
+        income: curr_income,
+        expense: curr_expense,
+        balance: curr_income - Math.abs(curr_expense),
+      });
+      setAllTrans(all_transactions);
+      setTransData(initial_val);
+    } else {
+      alert("Please enter transaction name and amount!");
+    }
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    <main className="flex justify-center items-center flex-col h-dvh ">
+      <div className="w-96">
+        <h3 className="text-4xl font-semibold text-center">Expense Tracker</h3>
+        {/* <h5 className="uppercase text-sm mt-6"> your balance</h5>
+        <h2 className="text-3xl">$350</h2> */}
+        <div className="flex mt-6 mb-6 gap-1">
+          <div className="flex flex-col itemse-center justify-center shadow-md p-4 shadow-gray-500 flex-1 text-center">
+            <span className="uppercase font-semibold text-lg">income</span>
+            <span className="text-2xl">{currStatus.income}</span>
+          </div>
+          <div className="flex flex-col itemse-center justify-center shadow-md p-4 shadow-gray-500 flex-1 text-center">
+            <span className="uppercase font-semibold text-lg">expense</span>
+            <span className="text-2xl">{currStatus.expense}</span>
+          </div>
+          <div className="flex flex-col itemse-center justify-center shadow-md p-4 shadow-gray-500 flex-1 text-center">
+            <span className="uppercase font-semibold text-lg">balance</span>
+            <span className="text-2xl">{currStatus.balance}</span>
+          </div>
         </div>
-      </div>
+        <div className="border-b border-gray-700 w-full pb-2">
+          <span className="text-lg ">History</span>
+        </div>
+        <div className="max-h-72 overflow-y-scroll scroll-hidden">
+          {allTrans.length ? (
+            <div className="flex flex-col gap-3 mt-6">
+              {allTrans.map((item, index) => {
+                return (
+                  <div
+                    key={item.name}
+                    className="shadow-md shadow-gray-700 px-3 cursor-pointer py-2 flex items-center justify-between"
+                  >
+                    <span>{item.name}</span>
+                    <span>{item.amount}</span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="mt-2">
+              <span className="text-sm pt-2">
+                Transactions history will appear here
+              </span>
+            </div>
+          )}
+        </div>
 
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
+        <div className="add-transaction mt-6">
+          <div className="border-gray-700 w-full pb-2 border-b">
+            <span className="text-lg pb-2 uppercase font-semibold">
+              Add new transaction
             </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
+          </div>
+          <form onSubmit={handleAddTransaction}>
+            <div className="flex flex-col mt-6">
+              <span>Transaction name</span>
+              <input
+                value={transData.name}
+                className="bg-gray-800 p-2 mt-2 outline-none"
+                type="text"
+                name="name"
+                onChange={handleChange}
+              />
+            </div>
+            <div className="flex flex-col mt-6">
+              <span>Amount</span>
+              <span className="text-sm">
+                (negative - expense, positive - income)
+              </span>
+              <input
+                value={transData.amount}
+                className="bg-gray-800 p-2 mt-2 outline-none"
+                type="number"
+                name="amount"
+                onChange={handleChange}
+              />
+            </div>
+            <button
+              type="submit"
+              className="uppercase bg-slate-400 w-full mt-6 p-2"
+            >
+              submit
+            </button>
+          </form>
+        </div>
       </div>
     </main>
   );
